@@ -10,24 +10,27 @@ import {
   Image
 } from 'react-native';
 import firebase from 'firebase';
-import { Avatar } from 'react-native-paper';
-import { ListItem } from 'react-native-elements'
+import { ActivityIndicator } from 'react-native-paper';
+import { ListItem } from 'react-native-elements';
 import User from '../User';
 // import styles from '../constants/styles';
+
+const PRIMARY_COLOR = '#39CA74';
 
 export default class Homescreen extends React.Component {
 
   static navigationOptions = ({navigation}) => {
     return {
-      title: 'Chats'
+      title: 'Chats',
     }
   }
 
   state = {
     users: [],
+    isLoading: true
   }
 
-  componentWillMount(){
+  componentDidMount(){
     
     let dbRef = firebase.database().ref('users');
     dbRef.on('child_added', (val) => {
@@ -38,7 +41,8 @@ export default class Homescreen extends React.Component {
       }else {
         this.setState((prevState) => {
           return {
-            users: [...prevState.users, person]
+            users: [...prevState.users, person],
+            isLoading: false
           }
         });
       }
@@ -77,6 +81,15 @@ export default class Homescreen extends React.Component {
   )
 
   render(){
+
+    if (this.state.isLoading) {
+      return(
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <ActivityIndicator animating={true} color={PRIMARY_COLOR} />
+        </View>
+      )
+    }
+
     return(
       <SafeAreaView>
         <FlatList

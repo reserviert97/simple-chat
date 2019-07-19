@@ -30,6 +30,7 @@ export default class AuthLoadingScreen extends React.Component {
       };
       // Initialize Firebase
       firebase.initializeApp(firebaseConfig);
+      
     }
     
   }

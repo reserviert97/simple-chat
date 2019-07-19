@@ -12,10 +12,10 @@ export const emailValidator = (email) => {
 };
 
 // Colors
-export const PRIMARY_COLOR = '#39CA74';
-export const DARK_GRAY = '#757575';
-export const BLACK = '#000000';
-export const WHITE = '#ffffff';
+const PRIMARY_COLOR = '#39CA74';
+const DARK_GRAY = '#757575';
+const BLACK = '#000000';
+const WHITE = '#ffffff';
 
 class Register extends Component {
   static navigationOptions = () => {
@@ -67,11 +67,17 @@ class Register extends Component {
     firebase.auth()
       .createUserWithEmailAndPassword(email, password)
       .then(({user}) => {
-        firebase.database().ref('users/'+ user.uid ).set({name : name})
+        // firebase.database().ref('users/'+ user.uid ).set({
+        //   name : name,
+        //   photo: "https://www.netfort.com/assets/user.png"
+        // });
         user.updateProfile({ displayName: name})
           .then(() => {
             this.setState({loading: false});
-            firebase.database().ref('users/'+ user.uid ).set({name : name});
+            firebase.database().ref('users/'+ user.uid ).set({
+              name : name,
+              photo: "https://www.netfort.com/assets/user.png"
+            });
             Alert.alert(
               'Success',
               "User " + name + " was created successfully. Please login.",

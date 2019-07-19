@@ -4,104 +4,70 @@ import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
   Animated,
   Image,
   Dimensions,
   TouchableOpacity,
-  PermissionsAndroid
+  TouchableWithoutFeedback,
+  PermissionsAndroid,
+  FlatList,
+  Button
 } from "react-native";
 
+import { ActivityIndicator } from 'react-native-paper';
+import { Avatar } from 'react-native-elements';
+import Modal from "react-native-modal";
 import MapView from "react-native-maps";
-// import Geolocation from '@react-native-community/geolocation';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import firebase from 'firebase';
 
-const Images = [
-  { uri: "https://i.imgur.com/sNam9iJ.jpg" },
-  { uri: "https://i.imgur.com/N7rlQYt.jpg" },
-  { uri: "https://i.imgur.com/UDrH0wm.jpg" },
-  { uri: "https://i.imgur.com/Ka8kNST.jpg" }
-]
-
+import User from '../User';
+import * as theme from '../constants/theme';
 const { width, height } = Dimensions.get("window");
 
+const PRIMARY_COLOR = '#39CA74';
 const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = CARD_HEIGHT - 50;
 
 export default class screens extends Component {
 
   state = {
-    markers: [
-      {
-        coordinate: {
-          latitude: -7.757896,
-          longitude: 110.377111,
-        },
-        title: "Best Place",
-        description: "This is the best place in Portland",
-        image: Images[0],
-      },
-      {
-        coordinate: {
-          latitude: -7.757358,
-          longitude: 110.377042,
-        },
-        title: "Second Best Place",
-        description: "This is the second best place in Portland",
-        image: Images[1],
-      },
-      {
-        coordinate: {
-          latitude: -7.756708,
-          longitude: 110.377235,
-        },
-        title: "Third Best Place",
-        description: "This is the third best place in Portland",
-        image: Images[2],
-      },
-      {
-        coordinate: {
-          latitude: -7.757160,
-          longitude: 110.375827,
-        },
-        title: "Fourth Best Place",
-        description: "This is the fourth best place in Portland",
-        image: Images[3],
-      },
-    ],
+    markers: [],
+    selfMarker: {},
     region: {
       latitude: null,
       longitude: null,
       latitudeDelta: 0.00264195044303443,
       longitudeDelta: 0.002142817690068,
-    }
+    },
+    active: null,
+    activeModal: null,
   };
 
   componentWillMount() {
+    firebase.database().ref('users').on('value', data => {
+      let datadumy = Object.values(data.val()).filter(data => data.name !== User.name);
+      this.setState({markers: datadumy})
+    });
+
     this.index = 0;
     this.animation = new Animated.Value(0);
     this.requestLocationPermission();
-    firebase.database().ref('users').once('value', data => {
-      console.log(data.val());
-      let datadumy = Object.values(data.val());
-      console.log(datadumy);
-      this.setState({markers: datadumy})
-      
-    });
 
   }
 
   async requestLocationPermission() {
     try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        {
-          'title': 'ChatinAja',
-          'message': 'ChatinAja need to access to your location '
-        }
-      )
+      const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
         navigator.geolocation.watchPosition(({coords}) => {
+
+          let userLocation = firebase.database().ref('users').child(User.uid).child('coordinate');
+          userLocation.set({
+            latitude: coords.latitude,
+            longitude: coords.longitude
+          }),
+
           this.setState(prevState => {
             return {
               region: {
@@ -113,7 +79,8 @@ export default class screens extends Component {
           })
         });
     
-      } else {
+      } 
+      else {
         console.log("location permission denied")
       }
     } catch (err) {
@@ -121,77 +88,137 @@ export default class screens extends Component {
     }
   }
 
-  componentDidMount() {
+  renderUser = (item) => {
 
-    // We should detect when scrolling has stopped then animate
-    // We should just debounce the event listener here
-    this.animation.addListener(({ value }) => {
-      let index = Math.floor(value / CARD_WIDTH + 0.3); // animate 30% away from landing on the next item
-      if (index >= this.state.markers.length) {
-        index = this.state.markers.length - 1;
-      }
-      if (index <= 0) {
-        index = 0;
-      }
+    return (
+      <TouchableWithoutFeedback key={`parking-${item.id}`} onPress={() => this.setState({ active: item.uid })} >
+        <View style={[styles.parking, styles.shadow]}>
+          <View style={styles.hours}>
+            <Text style={styles.hoursTitle}>{item.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              
+            </View>
+          </View>
+          <View style={styles.parkingInfoContainer}>
+            <View style={styles.parkingInfo}>
+              
+            </View>
 
-      clearTimeout(this.regionTimeout);
-      this.regionTimeout = setTimeout(() => {
-        if (this.index !== index) {
-          this.index = index;
-          const { coordinate } = this.state.markers[index];
-          this.map.animateToRegion(
-            {
-              ...coordinate,
-              latitudeDelta: this.state.region.latitudeDelta,
-              longitudeDelta: this.state.region.longitudeDelta,
-            },
-            350
-          );
-        }
-      }, 10);
-    });
+            <TouchableOpacity 
+              style={styles.buy} 
+              onPress={() => {
+                console.log(item.coordinate)
+                _mapView.animateToRegion({
+                  latitude: item.coordinate.latitude,
+                  longitude: item.coordinate.longitude,
+                  latitudeDelta: this.state.region.latitudeDelta,
+                  longitudeDelta: this.state.region.longitudeDelta
+                }, 1000)
+              }}
+            >
+              <View style={{justifyContent: 'center', alignItems: 'center', flex: 1, marginHorizontal: 5}}>
+                <Ionicons name="md-locate" color="white"/>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.buy} onPress={() => this.setState({ activeModal: item })}>
+              <View style={{justifyContent: 'center', alignItems: 'center', flex: 1, marginHorizontal: 5}}>
+              <Ionicons name="md-return-left" color="white"/>
+              </View>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </TouchableWithoutFeedback>
+    )
   }
 
-  render() {
-    const interpolations = this.state.markers.map((marker, index) => {
-      const inputRange = [
-        (index - 1) * CARD_WIDTH,
-        index * CARD_WIDTH,
-        ((index + 1) * CARD_WIDTH),
-      ];
-      const scale = this.animation.interpolate({
-        inputRange,
-        outputRange: [1, 2.5, 1],
-        extrapolate: "clamp",
-      });
-      const opacity = this.animation.interpolate({
-        inputRange,
-        outputRange: [0.35, 1, 0.35],
-        extrapolate: "clamp",
-      });
-      return { scale, opacity };
-    });
+  renderUsersList = () => {
+    return (
+      <FlatList
+        horizontal
+        pagingEnabled
+        scrollEnabled
+        showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={1}
+        snapToAlignment="center"
+        style={styles.usersList}
+        data={this.state.markers}
+        extraData={this.state}
+        keyExtractor={(item, index) => `${item.name}`}
+        renderItem={({ item }) => this.renderUser(item)}
+      />
+    )
+  }
 
+  renderModal() {
+    const { activeModal } = this.state;
+
+    if (!activeModal) return null;
+
+    return (
+      <Modal
+        isVisible
+        useNativeDriver
+        style={styles.modalContainer}
+        backdropColor={theme.COLORS.overlay}
+        onBackButtonPress={() => this.setState({ activeModal: null })}
+        onBackdropPress={() => this.setState({ activeModal: null })}
+        onSwipeComplete={() => this.setState({ activeModal: null })}
+      >
+        <View style={styles.modal}>
+          <View style={styles.modalInfo}>
+            <Avatar
+              size="xlarge"
+              rounded
+              source={{ uri: activeModal.photo }}
+            />
+          </View>
+
+          <View style={{alignItems: 'center', marginTop: 10}}>
+            <Text style={{ fontSize: theme.SIZES.font * 1.5, fontWeight: 'bold' }}>
+              {activeModal.name}
+            </Text>
+          </View>
+          <View style={{ paddingVertical: theme.SIZES.base, alignItems: 'center' }}>
+            <Text style={{ color: theme.COLORS.gray, fontSize: theme.SIZES.font * 1.1 }}>
+              {activeModal.gender}
+            </Text>
+          </View>
+          
+          <View>
+            <TouchableOpacity style={styles.payBtn}>
+              <Text style={styles.payText}>
+                Chat
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.payBtn} onPress={() => this.setState({ activeModal: null })}>
+              <Text style={styles.payText}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
+
+  render() {
+    console.log(this.state.selfMarker)
     if (this.state.region.latitude) {
       return (
         <View style={styles.container}>
           <MapView
             showsUserLocation
-            ref={map => this.map = map}
+            showsMyLocationButton={true}
+            ref = {(mapView) => { _mapView = mapView; }}
             initialRegion={this.state.region}
             style={styles.container}
+
           >
             {this.state.markers.map((marker, index) => {
-              const scaleStyle = {
-                transform: [
-                  {
-                    scale: interpolations[index].scale,
-                  },
-                ],
-              };
-              // const opacityStyle = {
-              //   opacity: interpolations[index].opacity,
-              // };
               return (
                 <MapView.Marker key={index} coordinate={marker.coordinate}>
                   <Animated.View >
@@ -202,48 +229,18 @@ export default class screens extends Component {
               );
             })}
           </MapView>
-          <Animated.ScrollView
-            horizontal
-            scrollEventThrottle={0.5}
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={CARD_WIDTH}
-            onScroll={Animated.event(
-              [
-                {
-                  nativeEvent: {
-                    contentOffset: {
-                      x: this.animation,
-                    },
-                  },
-                },
-              ],
-              { useNativeDriver: true }
-            )}
-            style={styles.scrollView}
-            contentContainerStyle={styles.endPadding}
-          >
-            {this.state.markers.map((marker, index) => (
-              <View style={styles.card} key={index}>
-                <Image
-                  source={marker.image}
-                  style={styles.cardImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.textContent}>
-                  <Text numberOfLines={1} style={styles.cardtitle}>{marker.title}</Text>
-                  <Text numberOfLines={1} style={styles.cardDescription}>
-                    {marker.description}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </Animated.ScrollView>
+            
+          {this.renderUsersList()}
+            
+          {this.renderModal()}
+  
         </View>
       );
     }else {
       return(
-        <View>
-          <Text>We need your location</Text>
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <Text style={{fontSize: 20, marginBottom: 20}}>Searching Your Location</Text>
+          <ActivityIndicator animating={true} color={PRIMARY_COLOR} size="large"/>
         </View>
       )
     }
@@ -254,6 +251,48 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  buy: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingHorizontal: theme.SIZES.base * 1.5,
+    paddingVertical: theme.SIZES.base,
+    backgroundColor: PRIMARY_COLOR,
+    borderRadius: 6,
+  },
+  modalInfo: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingVertical: theme.SIZES.base,
+    borderBottomWidth: 1,
+    borderTopColor: theme.COLORS.overlay,
+    borderBottomColor: theme.COLORS.overlay,
+  },
+  payText: {
+    fontWeight: '600',
+    fontSize: theme.SIZES.base * 1.5,
+    color: theme.COLORS.white,
+  },
+  payBtn: {
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.SIZES.base * 1.5,
+    backgroundColor: PRIMARY_COLOR,
+    marginVertical: 10
+  },
+  modalContainer: {
+    margin: 0,
+    justifyContent: 'flex-end',
+  },
+  usersList: {
+    position: 'absolute',
+    right: 0,
+    left: 0,
+    bottom: 0,
+    paddingBottom: theme.SIZES.base * 2,
+  },
+  // View
   scrollView: {
     position: "absolute",
     bottom: 30,
@@ -314,6 +353,146 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(130,4,150, 0.5)",
   },
+  parking: {
+    flexDirection: 'row',
+    backgroundColor: theme.COLORS.white,
+    borderRadius: 6,
+    padding: theme.SIZES.base,
+    marginHorizontal: theme.SIZES.base * 2,
+    width: width - (24 * 2),
+  },
+  shadow: {
+    shadowColor: theme.COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  hours: {
+    flex: 1,
+    flexDirection: 'column',
+    marginLeft: theme.SIZES.base / 2,
+    justifyContent: 'space-evenly',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: theme.SIZES.base * 2,
+    paddingTop: theme.SIZES.base * 2.5,
+    paddingBottom: theme.SIZES.base * 1.5,
+  },
+  headerTitle: {
+    color: theme.COLORS.gray,
+  },
+  headerLocation: {
+    fontSize: theme.SIZES.font,
+    fontWeight: '500',
+    paddingVertical: theme.SIZES.base / 3,
+  },
+  map: {
+    flex: 3,
+  },
+  parking: {
+    flexDirection: 'row',
+    backgroundColor: theme.COLORS.white,
+    borderRadius: 6,
+    padding: theme.SIZES.base,
+    marginHorizontal: theme.SIZES.base * 2,
+    width: width - (24 * 2),
+  },
+  buyTotal: {
+    flex: 1,
+    justifyContent: 'space-evenly',
+  },
+  buyTotalPrice: {
+    color: theme.COLORS.white,
+    fontSize: theme.SIZES.base * 2,
+    fontWeight: '600',
+    paddingLeft: theme.SIZES.base / 4,
+  },
+  buyBtn: {
+    flex: 0.5,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  marker: {
+    flexDirection: 'row',
+    backgroundColor: theme.COLORS.white,
+    borderRadius: theme.SIZES.base * 2,
+    paddingVertical: 12,
+    paddingHorizontal: theme.SIZES.base * 2,
+    borderWidth: 1,
+    borderColor: theme.COLORS.white,
+  },
+  markerPrice: { color: theme.COLORS.red, fontWeight: 'bold', },
+  markerStatus: { color: theme.COLORS.gray },
+  shadow: {
+    shadowColor: theme.COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  active: {
+    borderColor: theme.COLORS.red,
+  },
+  hours: {
+    flex: 1,
+    flexDirection: 'column',
+    marginLeft: theme.SIZES.base / 2,
+    justifyContent: 'space-evenly',
+  },
+  hoursTitle: {
+    fontSize: theme.SIZES.text,
+    fontWeight: '500',
+  },
+  hoursDropdown: {
+    borderRadius: theme.SIZES.base / 2,
+    borderColor: theme.COLORS.overlay,
+    borderWidth: 1,
+    padding: theme.SIZES.base,
+    marginRight: theme.SIZES.base / 2,
+  },
+  hoursDropdownOption: {
+    padding: 5,
+    fontSize: theme.SIZES.font * 0.8,
+  },
+  hoursDropdownStyle: {
+    marginLeft: -theme.SIZES.base,
+    paddingHorizontal: theme.SIZES.base / 2,
+    marginVertical: -(theme.SIZES.base + 1),
+  },
+  parkingInfoContainer: { flex: 1.5, flexDirection: 'row' },
+  parkingInfo: {
+    justifyContent: 'space-evenly',
+    marginHorizontal: theme.SIZES.base * 1.5,
+  },
+  parkingIcon: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modal: {
+    flexDirection: 'column',
+    height: height * 0.75,
+    padding: theme.SIZES.base * 2,
+    backgroundColor: theme.COLORS.white,
+    borderTopLeftRadius: theme.SIZES.base,
+    borderTopRightRadius: theme.SIZES.base,
+  },
+  modalHours: {
+    paddingVertical: height * 0.11,
+  },
+  modalHoursDropdown: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: theme.SIZES.base,
+  },
+  
 });
 
 AppRegistry.registerComponent("mapfocus", () => screens);
