@@ -81,23 +81,11 @@ export default class screens extends Component {
     this.index = 0;
     this.animation = new Animated.Value(0);
     this.requestLocationPermission();
-    var firebaseConfig = {
-      apiKey: "AIzaSyDmjC0psGBlVGGY8r3n6pJALoi6kWtG_14",
-      authDomain: "maps-1563346362883.firebaseapp.com",
-      databaseURL: "https://maps-1563346362883.firebaseio.com",
-      projectId: "maps-1563346362883",
-      storageBucket: "",
-      messagingSenderId: "999513508444",
-      appId: "1:999513508444:web:5b6e7beec4c3ab34"
-    };
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-
     firebase.database().ref('users').once('value', data => {
       console.log(data.val());
       let datadumy = Object.values(data.val());
       console.log(datadumy);
-      // this.setState({markers: datadumy})
+      this.setState({markers: datadumy})
       
     });
 

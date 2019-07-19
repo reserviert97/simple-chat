@@ -19,12 +19,7 @@ export default class Homescreen extends React.Component {
 
   static navigationOptions = ({navigation}) => {
     return {
-      title: 'Chats',
-      headerRight: (
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-          <Avatar.Text size={32} label="A" style={{marginRight: 10}}/>
-        </TouchableOpacity>
-      )
+      title: 'Chats'
     }
   }
 
@@ -33,10 +28,9 @@ export default class Homescreen extends React.Component {
   }
 
   componentWillMount(){
+    
     let dbRef = firebase.database().ref('users');
     dbRef.on('child_added', (val) => {
-      console.log(val);
-      
       let person = val.val();
       person.uid = val.key;
       if (person.uid === User.uid) {

@@ -21,7 +21,8 @@ export default class ChatScreen extends React.Component {
 
   static navigationOptions = ({navigation}) => {
     return {
-      title: navigation.getParam('person', null).name
+      title: navigation.getParam('person', null).name,
+      tabBarVisible: false
     }
   }
 

@@ -62,11 +62,15 @@ class LoginScreen extends Component {
     await firebase.auth().signInWithEmailAndPassword(email, password)
       .then(({user}) => {
         AsyncStorage.setItem('userEmail', user.email);
+        AsyncStorage.setItem('userName', user.displayName);
+        AsyncStorage.setItem('userUid', user.uid);
+
         User.email = user.email;
         User.name = user.displayName;
         User.uid = user.uid;
+
         this.setState({loading: false});
-        this.props.navigation.navigate('Home');
+        this.props.navigation.navigate('Explore');
       })
       .catch(error => {
         console.log(error);
