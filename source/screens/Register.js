@@ -89,6 +89,7 @@ class Register extends Component {
                 photo: "https://www.netfort.com/assets/user.png",
                 gender: '',
                 phone: '',
+                uid: user.uid,
               });
               Alert.alert(
                 'Success',

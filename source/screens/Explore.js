@@ -51,9 +51,9 @@ export default class screens extends Component {
     firebase.database().ref('users').on('value', data => {
       console.log(Object.entries(data.val()));
 
-      let datadumy = Object.values(data.val()).filter(data => data.name !== User.uid);
+      let datadumy = Object.values(data.val()).filter(data => data.uid !== User.uid);
       let datadumy2 = Object.entries(data.val()).filter(data => data[0] !== User.uid);
-      this.setState({markers: datadumy2});
+      this.setState({markers: datadumy});
       navigator.geolocation.getCurrentPosition(({coords}) => {
         let userLocation = firebase.database().ref('users').child(User.uid).child('coordinate');
         userLocation.set({
@@ -223,7 +223,6 @@ export default class screens extends Component {
 
           >
             {this.state.markers.map((marker, index) => {
-              console.log(marker, "Dari marker")
               return (
                 <MapView.Marker key={index} coordinate={marker.coordinate}>
                   <Animated.View >
