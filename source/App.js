@@ -18,6 +18,7 @@ import HomeScreen from './screens/Home';
 import ChatScreen from './screens/Chat';
 import ExploreScreen from './screens/Explore';
 import ProfileScreen from './screens/Profile';
+import EditProfile from './screens/EditProfile';
 
 // Implementation of HomeScreen, OtherScreen, SignInScreen, AuthLoadingScreen
 // goes here.
@@ -26,11 +27,10 @@ const PRIMARY_COLOR = '#39CA74';
 
 const AppStack = createStackNavigator({ 
   Home: HomeScreen, 
-  Chat: {
+  ChatScreen: {
     screen: ChatScreen
   } 
 });
-
 
 AppStack.navigationOptions = ({ navigation }) => {
   let tabBarVisible = true;
@@ -43,11 +43,16 @@ AppStack.navigationOptions = ({ navigation }) => {
   };
 };
 
+const ProfileStack = createStackNavigator({
+  Profile: ProfileScreen,
+  EditProfile: EditProfile
+})
+
 const AppTabs = createBottomTabNavigator(
   {
     Chat: AppStack,
     Explore: ExploreScreen,
-    Profile: ProfileScreen
+    Profile: ProfileStack
   },
   {
     defaultNavigationOptions: ({ navigation }) => ({

@@ -3,6 +3,7 @@ import {
   AsyncStorage,
   StatusBar,
   View,
+  PermissionsAndroid
 } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 
@@ -30,10 +31,27 @@ export default class AuthLoadingScreen extends React.Component {
       };
       // Initialize Firebase
       firebase.initializeApp(firebaseConfig);
-      
     }
+
+    this.requestLocation();
     
   }
+
+  async requestLocation(){
+    try {
+      const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        console.log('You can use the camera');
+      } else {
+        console.log('Camera permission denied');
+      }
+    } catch (err) {
+      console.log("location permission denied", err);
+    }
+  }
+
+  
+
 
   // Fetch the token from storage then navigate to our appropriate place
   _bootstrapAsync = async () => {

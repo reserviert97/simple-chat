@@ -70,6 +70,7 @@ class LoginScreen extends Component {
         User.uid = user.uid;
 
         this.setState({loading: false});
+
         this.props.navigation.navigate('Explore');
       })
       .catch(error => {
@@ -83,15 +84,6 @@ class LoginScreen extends Component {
           { cancelable: false }
         );
       })
-
-  }
-
-  componentWillMount() {
-    // AsyncStorage.getItem('userEmail').then(val => {
-    //   if(val){
-    //     this.setState({email:val}) 
-    //   }
-    // })
   }
 
   render() {

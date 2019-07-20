@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, AsyncStorage, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import firebase from 'firebase';
-import { FAB, ActivityIndicator } from 'react-native-paper';
+import { FAB, TextInput, ActivityIndicator } from 'react-native-paper';
 import User from '../User';
 
 export const PRIMARY_COLOR = '#39CA74';
@@ -13,19 +13,26 @@ export const WHITE = '#ffffff';
 const { width, height } = Dimensions.get('window');
 export default class App extends React.Component {
 
+  constructor(){
+    super();
+
+    this.state = {
+      photo: '',
+      gender: '',
+      phone: '',
+      isLoading: true,
+    };
+
+    this.updateLoginField = key => text => this.updateLoginFieldState(key, text);
+    // this.registerAction = this.registerAction.bind(this);
+  }
+
+
   static navigationOptions = ({navigation}) => {
     return {
       header: null,
     }
   } 
-
-  state = {
-    photo: '',
-    gender: '',
-    phone: '',
-    isLoading: true,
-    successEdit: this.props.navigation.getParam('loading', false)
-  }
 
   async componentDidMount(){
     
@@ -40,20 +47,29 @@ export default class App extends React.Component {
     })
   }
 
-  _logOut = async () => {
-
-    User.uid = null;
-    User.email = null;
-    User.name = null;
-    
-    await AsyncStorage.clear();
-    this.props.navigation.navigate('Auth');
+  updateLoginFieldState(key, value) {
+    this.setState({ [key]: value });
   }
 
-  render() {
+  async registerAction() {
+    const { gender, photo, phone } = this.state;
+    this.setState({ isLoading: true });
 
-    if (this.state.isLoading || this.state.successEdit) {
-      return (
+    const data = firebase.database().ref('users').child(User.uid);
+    data.update({
+      gender, phone, photo
+    });
+
+    this.setState({ isLoading: false });
+    this.props.navigation.navigate('Profile');
+  }
+
+
+  render() {
+    console.log(this.state);
+
+    if (this.state.isLoading) {
+      return(
         <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
           <ActivityIndicator animating={true} color={PRIMARY_COLOR} size="large"/>
         </View>
@@ -62,31 +78,41 @@ export default class App extends React.Component {
 
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          
-        </View>
+        <View style={styles.header}/>
         
         <View style={styles.body}>
-          <Image
-            resizeMode="cover"
-            style={styles.photo}
-            source={{uri: this.state.photo}}
-          />
           <View style={styles.subtitle}>
             <Text style={{fontSize: 20, fontWeight: 'bold'}}>{ User.name }</Text>
           </View>
           <View style={styles.listContainer}>
 
             <View style={styles.listWrapper}>
-                <Text style={{marginLeft: 10, fontSize: 16}}>{this.state.gender}</Text>
+                {/* <Text style={{marginLeft: 10, fontSize: 16}}>{User.email}</Text> */}
+                <TextInput
+                  style={{flex: 1}}
+                  value={this.state.photo}
+                  onChangeText={this.updateLoginField('photo')}
+                />
             </View>
 
             <View style={styles.listWrapper}>
-                <Text style={{marginLeft: 10, fontSize: 16}}>{User.email}</Text>
+                {/* <Text style={{marginLeft: 10, fontSize: 16}}>{this.state.gender}</Text> */}
+                <TextInput
+                  style={{flex: 1}}
+                  value={this.state.gender}
+                  placeholder='Insert you gender'
+                  onChangeText={this.updateLoginField('gender')}
+                />
             </View>
 
             <View style={styles.listWrapper}>
-                <Text style={{marginLeft: 10, fontSize: 16}}>{this.state.phone}</Text>
+                {/* <Text style={{marginLeft: 10, fontSize: 16}}>{this.state.phone}</Text> */}
+                <TextInput 
+                  style={{flex: 1}}
+                  value={this.state.phone}
+                  placeholder='Insert phone number'
+                  onChangeText={this.updateLoginField('phone')}
+                />
             </View>
 
           </View>
@@ -95,16 +121,16 @@ export default class App extends React.Component {
         <FAB
           style={styles.fab2}
           small
-          icon="settings"
-          onPress={() => this.props.navigation.navigate('EditProfile')}
+          icon="arrow-back"
+          onPress={() => this.props.navigation.navigate('Profile', { loading: true })}
         >
         </FAB>
 
         <FAB
           style={styles.fab}
           small
-          icon="arrow-forward"
-          onPress={this._logOut}
+          icon="done"
+          onPress={() => this.registerAction()}
         >
         </FAB>
       </View>
@@ -120,20 +146,10 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY_COLOR,
     flex: 3
   },
-  photo: {
-    width: width / 3,
-    height: width / 3,
-    position: 'absolute',
-    top: -60,
-    left: width / 3,
-    borderWidth: 3,
-    borderColor: 'white',
-    borderRadius: 10,
-  },
   body: {
     backgroundColor: WHITE,
     flex: 8,
-    paddingTop: 60,
+    paddingTop: 20,
     paddingBottom: 30
   },
   subtitle: {
@@ -159,7 +175,7 @@ const styles = StyleSheet.create({
     marginVertical: 10
   },
   fab: {
-    backgroundColor: 'red',
+    backgroundColor: PRIMARY_COLOR,
     position: 'absolute',
     margin: 16,
     right: 0,

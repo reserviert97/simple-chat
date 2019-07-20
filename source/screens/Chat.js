@@ -31,6 +31,8 @@ export default class ChatScreen extends React.Component {
   }
 
   componentDidMount(){
+    console.log(this.state.person);
+    
     try {
       firebase.database().ref('messages')
       .child(User.uid)
@@ -40,10 +42,12 @@ export default class ChatScreen extends React.Component {
           messagesList: GiftedChat.append(previousState.messagesList, value.val()),
           isLoading: false
         }))
-      })
+      }
+      )
     } catch (err) {
       this.setState({isLoading: false});
     }
+    this.setState({isLoading: false})
   }
 
   handleChange = key => val => {

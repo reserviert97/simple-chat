@@ -44,7 +44,8 @@ class Register extends Component {
       name: undefined,
       enabled: false,
       loading: false,
-      checked: false
+      checked: false,
+      region: {},
     }
 
     this.updateLoginField = key => text => this.updateLoginFieldState(key, text);
@@ -60,6 +61,17 @@ class Register extends Component {
     this.setState({ enabled: emailValidator(email) && name && password && password.length > 0 });
   }
 
+  componentWillMount(){
+    navigator.geolocation.watchPosition(({coords}) => {
+      this.setState({
+        region: {
+          latitude: coords.latitude,
+          longitude: coords.longitude
+        }
+      })
+    });
+  }
+
   async registerAction() {
     const { email, password, name } = this.state;
     this.setState({ loading: true });
@@ -67,28 +79,40 @@ class Register extends Component {
     firebase.auth()
       .createUserWithEmailAndPassword(email, password)
       .then(({user}) => {
-        // firebase.database().ref('users/'+ user.uid ).set({
-        //   name : name,
-        //   photo: "https://www.netfort.com/assets/user.png"
-        // });
         user.updateProfile({ displayName: name})
           .then(() => {
+            
             this.setState({loading: false});
-            firebase.database().ref('users/'+ user.uid ).set({
-              name : name,
-              photo: "https://www.netfort.com/assets/user.png"
+            navigator.geolocation.getCurrentPosition(({coords}) => {
+              firebase.database().ref('users/'+ user.uid ).set({
+                name : name,
+                photo: "https://www.netfort.com/assets/user.png",
+                gender: '',
+                phone: '',
+              });
+              Alert.alert(
+                'Success',
+                "User " + name + " was created successfully. Please login.",
+                [
+                  { text: 'OK', onPress: () => {
+                    this.setState({ loading: false });
+                    this.props.navigation.navigate('Login');
+                  } }
+                ],
+                { cancelable: false }
+              );
+
+              let userLocation = firebase.database().ref('users').child(user.uid).child('coordinate');
+              userLocation.set({
+                latitude: coords.latitude,
+                longitude: coords.longitude
+              })
+      
+              
+            }, (error) => {
+              console.log(error, "ERRORNYA DISINI")
             });
-            Alert.alert(
-              'Success',
-              "User " + name + " was created successfully. Please login.",
-              [
-                { text: 'OK', onPress: () => {
-                  this.setState({ loading: false });
-                  this.props.navigation.navigate('Login');
-                } }
-              ],
-              { cancelable: false }
-            );
+            
           }, (error) => {
             console.log("Error update displayName.");
           });

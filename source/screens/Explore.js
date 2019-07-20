@@ -31,61 +31,60 @@ const CARD_WIDTH = CARD_HEIGHT - 50;
 
 export default class screens extends Component {
 
-  state = {
-    markers: [],
-    selfMarker: {},
-    region: {
-      latitude: null,
-      longitude: null,
-      latitudeDelta: 0.00264195044303443,
-      longitudeDelta: 0.002142817690068,
-    },
-    active: null,
-    activeModal: null,
-  };
+  constructor(){
+    super();
+    this.state = {
+      markers: [],
+      selfMarker: {},
+      region: {
+        latitude: null,
+        longitude: null,
+        latitudeDelta: 0.00264195044303443,
+        longitudeDelta: 0.002142817690068,
+      },
+      active: null,
+      activeModal: null,
+    };
+  }
 
   componentWillMount() {
     firebase.database().ref('users').on('value', data => {
-      let datadumy = Object.values(data.val()).filter(data => data.name !== User.name);
-      this.setState({markers: datadumy})
-    });
+      console.log(Object.entries(data.val()));
 
-    this.index = 0;
-    this.animation = new Animated.Value(0);
-    this.requestLocationPermission();
+      let datadumy = Object.values(data.val()).filter(data => data.name !== User.uid);
+      let datadumy2 = Object.entries(data.val()).filter(data => data[0] !== User.uid);
+      this.setState({markers: datadumy2});
+      navigator.geolocation.getCurrentPosition(({coords}) => {
+        let userLocation = firebase.database().ref('users').child(User.uid).child('coordinate');
+        userLocation.set({
+          latitude: coords.latitude,
+          longitude: coords.longitude
+        }),
+
+        this.setState(prevState => {
+          return {
+            region: {
+              ...prevState.region,
+              latitude: coords.latitude,
+              longitude: coords.longitude
+            }
+          }
+        })
+      }, (error) => {
+        console.log(error, "ERRORNYA DISINI")
+      });
+
+    });
 
   }
 
-  async requestLocationPermission() {
-    try {
-      const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        navigator.geolocation.watchPosition(({coords}) => {
-
-          let userLocation = firebase.database().ref('users').child(User.uid).child('coordinate');
-          userLocation.set({
-            latitude: coords.latitude,
-            longitude: coords.longitude
-          }),
-
-          this.setState(prevState => {
-            return {
-              region: {
-                ...prevState.region,
-                latitude: coords.latitude,
-                longitude: coords.longitude
-              }
-            }
-          })
-        });
-    
-      } 
-      else {
-        console.log("location permission denied")
+  componentWillUnmount() {
+    this.setState({
+      region: {
+        latitude: null,
+        longitude: null
       }
-    } catch (err) {
-      console.log("location permission denied", err)
-    }
+    })
   }
 
   renderUser = (item) => {
@@ -187,7 +186,13 @@ export default class screens extends Component {
           </View>
           
           <View>
-            <TouchableOpacity style={styles.payBtn}>
+            <TouchableOpacity 
+              style={styles.payBtn} 
+              onPress={() => {
+                this.props.navigation.navigate('ChatScreen', { person: activeModal}) 
+                this.setState({ activeModal: null })
+              }}
+            >
               <Text style={styles.payText}>
                 Chat
               </Text>
@@ -206,7 +211,6 @@ export default class screens extends Component {
 
 
   render() {
-    console.log(this.state.selfMarker)
     if (this.state.region.latitude) {
       return (
         <View style={styles.container}>
@@ -219,6 +223,7 @@ export default class screens extends Component {
 
           >
             {this.state.markers.map((marker, index) => {
+              console.log(marker, "Dari marker")
               return (
                 <MapView.Marker key={index} coordinate={marker.coordinate}>
                   <Animated.View >

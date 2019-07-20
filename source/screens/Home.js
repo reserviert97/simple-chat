@@ -50,7 +50,7 @@ export default class Homescreen extends React.Component {
   }
 
   goToChatRoom = (item) => {
-    this.props.navigation.navigate('Chat', { person: item});
+    this.props.navigation.navigate('ChatScreen', { person: item});
   };
   
   keyExtractor = (item, index) => index.toString();
