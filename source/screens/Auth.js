@@ -17,45 +17,42 @@ export default class AuthLoadingScreen extends React.Component {
     this._bootstrapAsync();
   }
 
-  componentWillMount(){
-
+  componentWillMount() {
     if (!firebase.apps.length) {
+      // Your Firebase Settings Here
       var firebaseConfig = {
-        apiKey: "AIzaSyB1dDa4XvnSeL5IZtykW7aqfoF7I4amymY",
-        authDomain: "arka-chat.firebaseapp.com",
-        databaseURL: "https://arka-chat.firebaseio.com",
-        projectId: "arka-chat",
-        storageBucket: "",
-        messagingSenderId: "912534555372",
-        appId: "1:912534555372:web:a0a0bacb65c29547"
+        apiKey: 'YOUR FIREBASE API KEY HERE',
+        authDomain: '',
+        databaseURL: '',
+        projectId: '',
+        storageBucket: '',
+        messagingSenderId: '',
+        appId: ''
       };
       // Initialize Firebase
       firebase.initializeApp(firebaseConfig);
     }
 
     this.requestLocation();
-    
   }
 
-  async requestLocation(){
+  async requestLocation() {
     try {
-      const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+      );
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
         console.log('You can use the camera');
       } else {
         console.log('Camera permission denied');
       }
     } catch (err) {
-      console.log("location permission denied", err);
+      console.log('location permission denied', err);
     }
   }
 
-  
-
-
   // Fetch the token from storage then navigate to our appropriate place
   _bootstrapAsync = async () => {
-
     User.name = await AsyncStorage.getItem('userName');
     User.uid = await AsyncStorage.getItem('userUid');
     User.email = await AsyncStorage.getItem('userEmail');
@@ -68,8 +65,12 @@ export default class AuthLoadingScreen extends React.Component {
   // Render any loading content that you like here
   render() {
     return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        <ActivityIndicator animating={true} color={PRIMARY_COLOR} size="large"/>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator
+          animating={true}
+          color={PRIMARY_COLOR}
+          size="large"
+        />
         <StatusBar barStyle="default" />
       </View>
     );
